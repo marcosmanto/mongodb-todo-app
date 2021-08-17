@@ -1,3 +1,36 @@
+const form = document.querySelector('form[action *= "create-item"]')
+const createInput = document.getElementById('create-field')
+const itemsList = document.getElementById('item-list')
+
+form.addEventListener('submit', (event) => {
+  event.preventDefault()
+  axios.post('/create-item', {
+    item: createInput.value
+  }).then((res) => {
+
+    // check if there was a server validation error
+    if(res.data.errInfo) {
+      console.log('Error. Review data sent.')
+      return
+    }
+
+    // create HTML for new item
+    // and adds to the end of list
+    itemsList.insertAdjacentHTML('beforeend',
+`<li class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
+  <span class="item-text">${createInput.value}</span>
+  <div>
+    <button data-id="${res.data.insertedId}" class="edit-me btn btn-secondary btn-sm mr-1">Edit</button>
+    <button data-id="${res.data.insertedId}" class="delete-me btn btn-danger btn-sm">Delete</button>
+  </div>
+</li>`
+    )
+    createInput.value = ''
+    createInput.focus()
+  }).catch(() => console.log('Please try again later.'))
+})
+
+
 document.addEventListener('click', (event) => {
 
   // Update action

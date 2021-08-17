@@ -17,6 +17,8 @@ mongodb.MongoClient.connect(connectionString, {useNewUrlParser: true, useUnified
 
   db = client.db()
 
+  if (db) console.log('Connected to database.')
+
   app.listen(3000)
   reload(app)
 })
@@ -42,13 +44,13 @@ app.get('/', function(req, res) {
         <div class="jumbotron p-3 shadow-sm">
           <form action="/create-item" method="POST">
             <div class="d-flex flex-wrap align-items-center justify-content-center">
-            <input name="item" autofocus="" autocomplete="off" class="form-control mr-3" type="text" style="flex: 1;flex-basis: 300px;flex-shrink: 0;">
+            <input id="create-field" name="item" autofocus="" autocomplete="off" class="form-control mr-3" type="text" style="flex: 1;flex-basis: 300px;flex-shrink: 0;">
               <button class="btn btn-primary mt-2">Add New Item</button>
             </div>
           </form>
         </div>
 
-        <ul class="list-group pb-5">
+        <ul id="item-list" class="list-group pb-5">
 
           ${
             items.map( item => {
@@ -76,11 +78,44 @@ app.get('/', function(req, res) {
 
 })
 
+/*
 app.post('/create-item', function(req, res) {
   db.collection('items').insertOne({text: req.body.item}, () => {
     res.redirect('/')
   })
+}) */
+
+// new create-item answering post type requests
+app.post('/create-item', async function(req, res) {
+  let newItem
+  try {
+    newItem = await db.collection('items').insertOne({text: req.body.item})
+  } catch (e) {
+    //res.send(`Error: ${e}`)
+    res.send(e)
+    return
+  }
+
+  if (!newItem) {
+    res.send('Error creating item. Review posted body data.')
+    return
+  }
+
+  res.json(newItem)
+
+  // res.send(`{
+  //   "id": "${newItem.insertedId.toString()}"
+  // }`.trim())
+
 })
+
+/* app.post('/create-item', (req, res) => {
+  db.collection('items').insertOne({
+    text: req.body.item
+  }, (err, info) => {
+    res.json(info.insertedId)
+  })
+}) */
 
 app.post('/update-item', (req, res) => {
   db.collection('items').findOneAndUpdate({
