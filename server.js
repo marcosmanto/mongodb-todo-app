@@ -9,7 +9,14 @@ app.use(express.static('public'))
 
 const connectionString = 'mongodb://127.0.0.1/TodoApp'
 mongodb.MongoClient.connect(connectionString, {useNewUrlParser: true, useUnifiedTopology: true}, (err, client) => {
+
+  if(err.stack.toLowerCase().includes('timeout')) {
+    console.log('Connection timeout. Check if mongodb server is running.')
+    process.exit(0)
+  }
+
   db = client.db()
+
   app.listen(3000)
   reload(app)
 })
