@@ -1,6 +1,16 @@
 const express = require('express')
 const reload = require('reload')
+const mongodb = require('mongodb')
+
 const app = express()
+let db
+
+const connectionString = 'mongodb://127.0.0.1/TodoApp'
+mongodb.MongoClient.connect(connectionString, {useNewUrlParser: true, useUnifiedTopology: true}, (err, client) => {
+  db = client.db()
+  app.listen(3000)
+  reload(app)
+})
 
 app.use(express.urlencoded({extended: false}))
 
@@ -19,9 +29,9 @@ app.get('/', function(req, res) {
 
       <div class="jumbotron p-3 shadow-sm">
         <form action="/create-item" method="POST">
-          <div class="d-flex align-items-center">
-            <input name="item" autofocus autocomplete="off" class="form-control mr-3" type="text" style="flex: 1;">
-            <button class="btn btn-primary">Add New Item</button>
+          <div class="d-flex flex-wrap align-items-center justify-content-center">
+          <input name="item" autofocus="" autocomplete="off" class="form-control mr-3" type="text" style="flex: 1;flex-basis: 300px;flex-shrink: 0;">
+            <button class="btn btn-primary mt-2">Add New Item</button>
           </div>
         </form>
       </div>
@@ -58,9 +68,7 @@ app.get('/', function(req, res) {
 })
 
 app.post('/create-item', function(req, res) {
-  console.log(req.body.item)
-  res.send("Thanks for submitting the form.")
+  db.collection('items').insertOne({text: req.body.item}, () => {
+    res.send("Thanks for submitting the form.")
+  })
 })
-
-app.listen(3000)
-reload(app)
