@@ -9,14 +9,10 @@ const tasksHTML = items.map( item => {
 </li>`
 }).join('')
 
-console.log(tasksHTML)
-
 itemsList.insertAdjacentHTML('beforeend', tasksHTML)
-
 
 const form = document.querySelector('form[action *= "create-item"]')
 const createInput = document.getElementById('create-field')
-
 
 form.addEventListener('submit', (event) => {
   event.preventDefault()

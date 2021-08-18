@@ -1,6 +1,7 @@
 const express = require('express')
 const reload = require('reload')
 const mongodb = require('mongodb')
+const sanitizeHtml = require('sanitize-html')
 
 const app = express()
 let db
@@ -26,7 +27,30 @@ mongodb.MongoClient.connect(connectionString, {useNewUrlParser: true, useUnified
 app.use(express.json())
 app.use(express.urlencoded({extended: false}))
 
-app.get('/', function(req, res) {
+function passwordProtected(req, res, next) {
+  console.log('Password middleware')
+  res.set('WWW-Authenticate', 'Basic realm="Simple Todo App"')
+
+
+  if (!req.headers.authorization || req.headers.authorization.indexOf('Basic ') === -1) {
+    return res.status(401).json({ message: 'Missing Authorization Header' });
+  }
+
+  const base64Credentials =  req.headers.authorization.split(' ')[1]
+  const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii')
+  const [username, password] = credentials.split(':');
+
+  if(password !== '123456') {
+    return res.status(401).json({ message: 'Invalid Authentication Credentials' })
+  }
+
+  next()
+
+}
+
+app.use(passwordProtected)
+
+app.get('/', (req, res) => {
   db.collection('items').find().toArray((err, items) => {
 
     res.send(`<!DOCTYPE html>
@@ -78,7 +102,8 @@ app.post('/create-item', function(req, res) {
 app.post('/create-item', async function(req, res) {
   let newItem
   try {
-    newItem = await db.collection('items').insertOne({text: req.body.item})
+    const safeText = sanitizeHtml(req.body.item, {allowedTags: [], allowedAttributes: []})
+    newItem = await db.collection('items').insertOne({text: safeText})
   } catch (e) {
     //res.send(`Error: ${e}`)
     res.send(e)
@@ -107,11 +132,12 @@ app.post('/create-item', async function(req, res) {
 }) */
 
 app.post('/update-item', (req, res) => {
+  const safeText = sanitizeHtml(req.body.text, {allowedTags: [], allowedAttributes: []})
   db.collection('items').findOneAndUpdate({
     _id: new mongodb.ObjectId(req.body.id)
   }, {
     $set: {
-      text: req.body.text
+      text: safeText
     }
   }, () => {
     res.send('success')
